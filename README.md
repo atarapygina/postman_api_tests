@@ -1,4 +1,4 @@
-# Postman API Tests. About:
+# Postman API Tests. 
 
 The project demonstrates practical API testing techniques including positive and negative scenarios, response validation, boundary testing, and test data handling.
 
