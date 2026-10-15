@@ -1,0 +1,227 @@
+{
+  "info": {
+    "name": "Postman API Tests - QA Portfolio",
+    "description": "REST API QA portfolio collection covering positive/negative testing, response validation, boundary testing, response time checks, and basic request chaining.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://jsonplaceholder.typicode.com"
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "createdUserId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "GET Users",
+      "item": [
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\",()=>pm.response.to.have.status(200));",
+                  "const data=pm.response.json();",
+                  "pm.test(\"Response is an array\",()=>pm.expect(data).to.be.an(\"array\"));",
+                  "pm.test(\"Response contains users\",()=>pm.expect(data.length).to.be.above(0));",
+                  "pm.test(\"Required fields exist\",()=>{pm.expect(data[0]).to.have.property(\"id\");pm.expect(data[0]).to.have.property(\"name\");pm.expect(data[0]).to.have.property(\"email\");});",
+                  "pm.test(\"Response time is below 1000 ms\",()=>pm.expect(pm.response.responseTime).to.be.below(1000));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get single user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\",()=>pm.response.to.have.status(200));",
+                  "const data=pm.response.json();",
+                  "pm.test(\"ID matches requested ID\",()=>pm.expect(data.id).to.eql(Number(pm.variables.get(\"userId\"))));",
+                  "pm.test(\"Required fields exist\",()=>{pm.expect(data).to.have.property(\"name\");pm.expect(data).to.have.property(\"username\");pm.expect(data).to.have.property(\"email\");});",
+                  "pm.test(\"Email has basic valid format\",()=>pm.expect(data.email).to.include(\"@\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Negative Tests",
+      "item": [
+        {
+          "name": "Get non-existing user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/9999"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 404\",()=>pm.response.to.have.status(404));",
+                  "pm.test(\"Response body is empty object\",()=>pm.expect(pm.response.text()).to.eql(\"{}\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "POST Users",
+      "item": [
+        {
+          "name": "Create user - valid data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Anna QA\",\n  \"username\": \"anna_qa\",\n  \"email\": \"anna.qa@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\",()=>pm.response.to.have.status(201));",
+                  "const data=pm.response.json();",
+                  "pm.test(\"Created data is correct\",()=>{pm.expect(data.name).to.eql(\"Anna QA\");pm.expect(data.username).to.eql(\"anna_qa\");pm.expect(data.email).to.eql(\"anna.qa@example.com\");});",
+                  "pm.test(\"Generated ID exists\",()=>pm.expect(data).to.have.property(\"id\"));",
+                  "pm.environment.set(\"createdUserId\",data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create user - boundary data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"A\",\n  \"username\": \"a\",\n  \"email\": \"a@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\",()=>pm.response.to.have.status(201));",
+                  "const data=pm.response.json();",
+                  "pm.test(\"Boundary input is returned correctly\",()=>{pm.expect(data.name).to.eql(\"A\");pm.expect(data.username).to.eql(\"a\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PUT Users",
+      "item": [
+        {
+          "name": "Update user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/users/{{userId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 1,\n  \"name\": \"Anna Updated\",\n  \"username\": \"anna_updated\",\n  \"email\": \"anna.updated@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\",()=>pm.response.to.have.status(200));",
+                  "const data=pm.response.json();",
+                  "pm.test(\"Updated data is returned\",()=>{pm.expect(data.name).to.eql(\"Anna Updated\");pm.expect(data.username).to.eql(\"anna_updated\");pm.expect(data.email).to.eql(\"anna.updated@example.com\");});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DELETE Users",
+      "item": [
+        {
+          "name": "Delete user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/users/{{userId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\",()=>pm.response.to.have.status(200));",
+                  "pm.test(\"Response body is empty object\",()=>pm.expect(pm.response.text()).to.eql(\"{}\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
